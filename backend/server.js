@@ -6,6 +6,8 @@ require("dotenv").config();
 
 const app = express();
 const port = process.env.PORT || 3001;
+const COUNTRIES_API_BASE_URL =
+  process.env.COUNTRIES_API_BASE_URL || "https://restcountries.com/v3.1";
 
 app.use(cors());
 app.use(express.json());
@@ -22,14 +24,28 @@ const pool = new Pool({
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   port: 5432,
+  // connectionString: process.env.DATABASE_URL,
 });
+
+// Create the 'destinations' table if it doesn't exist
+const createTableQuery = `
+CREATE TABLE IF NOT EXISTS destinations (
+  id SERIAL PRIMARY KEY,
+  country VARCHAR(100) NOT NULL,
+  capital VARCHAR(100),
+  population INTEGER,
+  region VARCHAR(100)
+);`;
+
+// Ensure the table exists when the server starts
+pool
+  .query(createTableQuery)
+  .then(() => console.log("Destinations table is ready"))
+  .catch((err) => console.error("Error creating destinations table:", err));
 
 pool.on("error", (err) => {
   console.error("Unexpected error on idle client", err);
 });
-
-const COUNTRIES_API_BASE_URL =
-  process.env.COUNTRIES_API_BASE_URL || "https://restcountries.com/v3.1";
 
 app.get("/api/destinations", async (req, res) => {
   console.log("GET /api/destinations - Fetching all destinations");
@@ -99,9 +115,14 @@ app.delete("/api/destinations/:id", async (req, res) => {
   }
 });
 
+app.get("/", async (req, res) => {
+  res.status(200).send("Server is working");
+});
+
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
-  console.log(`Database host: ${process.env.DB_HOST}`);
+  console.log(`Database host: ${process.env.DATABASE_URL}`);
   console.log(`Database name: ${process.env.DB_NAME}`);
   console.log(`Countries API base URL: ${COUNTRIES_API_BASE_URL}`);
+  console.log(`POSTGRES_PASSWORD name: ${process.env.POSTGRES_PASSWORD}`);
 });

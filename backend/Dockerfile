@@ -1,4 +1,6 @@
 # Use the official Node.js image as the base image
+# From my knowledge, the usage of "alpine" helps compress the size of the built docker image
+# Else we could see a docker image size of over 100MB but with this, our built image would be lesser than 100MB
 FROM node:18-alpine
 
 # Set environment variable
